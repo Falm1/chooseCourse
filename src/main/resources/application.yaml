@@ -1,0 +1,29 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+spring:
+  datasource:
+    username: root
+    password: Falm200212
+    url: jdbc:mysql://sh-cynosdbmysql-grp-9zygv12w.sql.tencentcdb.com:24342/my_choose_class
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  redis:
+    host: 39.101.78.157
+#    host: localhost
+    port: 6379
+    database: 2
+#    password: falm200212
+  #session 失效时间
+  session:
+    timeout: 86400
+    store-type: redis
+pagehelper:
+  helperDialect: mysql
+  propertyName: propertyValue
+  reasonable: true
+  defaultCount: true
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
