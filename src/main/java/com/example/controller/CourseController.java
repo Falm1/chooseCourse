@@ -43,7 +43,7 @@ public class CourseController {
         if(courseAddRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_NULL, "系统错误");
         }
-        boolean res = courseService.addCourses(courseAddRequest, request);
+        boolean res = courseService.addCourse(courseAddRequest, request);
         return RestBean.success("新建课程成功", res);
     }
 

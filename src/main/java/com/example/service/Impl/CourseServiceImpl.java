@@ -17,6 +17,7 @@ import com.example.mapper.CourseMapper;
 import com.example.mapper.GradeMapper;
 import com.example.service.CourseService;
 import com.example.service.UserService;
+import com.example.utils.algorithm.SnowMaker;
 import com.example.utils.factory.course.CourseFactory;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,49 +52,47 @@ public class CourseServiceImpl implements CourseService {
     @Resource
     RedisTemplate<String, Object> redisTemplate;
 
-    @Override
-    public boolean addCourses(CourseAddRequest courseAddRequest, HttpServletRequest request) {
-        UserVO user = userService.getMe(request);
-        if(user == null){
-            throw new BusinessException(ErrorCode.NO_AUTH, "用户未登录");
-        }
-        if(courseAddRequest == null){
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误");
-        }
-        Integer status = courseAddRequest.getStatus();
-        switch (status) {
-            case 0 -> addCourse(courseAddRequest, user, status);
-            case 1, 2, 3 -> addWithCourse(courseAddRequest, user);
-            default -> throw new BusinessException(ErrorCode.PARAMS_ERROR, "添加类型错误");
-        }
+    @Resource
+    SnowMaker snowMaker;
 
-        return true;
-    }
+
 
     /**
      * 添加课程
      * @param courseAddRequest
-     * @param user
+     * @param  request
      */
-    private void addWithCourse(CourseAddRequest courseAddRequest, UserVO user) {
+    public boolean addCourse(CourseAddRequest courseAddRequest, HttpServletRequest request) {
+        //检查权限
+        UserVO user = userService.getMe(request);
+        userService.isAdmin(user);
+        //设置课程信息
+        Course course = new Course();
+        course.setCourseId(snowMaker.nextId());
+        course.setCourseName(courseAddRequest.getCourseName());
+        course.setTeacherId(courseAddRequest.getTeacherId());
+        course.setStatus(course.getStatus());
+        course.setParentId(course.getParentId());
+        course.setCreateUser(user.getUsername());
+        course.setCreateTime(new Date());
+        course.setModifyUser("");
+        course.setModifyTime(new Date());
+        course.setIsDelete(0);
+        course.setMaxNum(courseAddRequest.getMaxNum());
+        course.setNum(0);
 
+        courseMapper.addCourse(course);
+        return true;
     }
 
-    /**
-     * 添加属性
-     * @param courseAddRequest
-     * @param user
-     * @param status
-     */
-    private void addCourse(CourseAddRequest courseAddRequest, UserVO user, Integer status) {
-
-    }
 
     @Override
     public boolean updateCourse(CourseUpdateRequest courseUpdateRequest, HttpServletRequest request) throws InterruptedException {
         redisTemplate.delete(REDIS_FALM_COURSE);
         UserVO user = userService.getMe(request);
-        userService.isAdmin(user);
+        if(!userService.isAdmin(user)){
+            throw new BusinessException(ErrorCode.NO_AUTH,"用户无权限");
+        }
         Long courseId = courseUpdateRequest.getCourseId();
         if(courseId == null){
             throw new BusinessException(ErrorCode.PARAMS_NULL, "找不到该课程");

@@ -13,13 +13,14 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public interface CourseService {
+
     /**
      * 新建课程
      * @param courseAddRequest 课程信息
      * @param request 获取登录对象鉴权
      * @return 是否创建成功
      */
-    boolean addCourses(CourseAddRequest courseAddRequest, HttpServletRequest request);
+    boolean addCourse(CourseAddRequest courseAddRequest, HttpServletRequest request);
 
     /**
      * 修改课程

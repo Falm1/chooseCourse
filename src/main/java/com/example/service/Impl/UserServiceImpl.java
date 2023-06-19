@@ -143,6 +143,21 @@ public class UserServiceImpl implements UserService {
         return true;
     }
 
+    public boolean isTeacher(UserVO user){
+        Integer userRole = user.getRole();
+        if(userRole == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "用户异常");
+        }
+        UserStatusEnum userStatusEnum = UserStatusEnum.getUserStatusEnumByRole(userRole);
+        if(userStatusEnum == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "用户异常");
+        }
+        if(!userStatusEnum.equals(UserStatusEnum.TEACHER)){
+            throw new BusinessException(ErrorCode.NO_AUTH, "用户无权限");
+        }
+        return true;
+    }
+
     //使用两种场景，1. RabbitMQ 2.redis加锁   两者测试并发环境
     //对于经常需要修改的数据，将其存放到redis中，在redis中修改，之后再将其持久化到数据库
     //redis中存放 课程被哪些学生选，还有课程被选的数目
