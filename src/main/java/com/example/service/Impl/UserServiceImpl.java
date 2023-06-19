@@ -166,17 +166,18 @@ public class UserServiceImpl implements UserService {
                 if(courseMap.containsKey(userId)){
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "不能重复选择课程");
                 }
+                courseMap.put(userId, 0);
                 redisTemplate.opsForHash().put(REDIS_COURSE_KEY, redisCourseId, courseMap);     //之前数据会被覆盖
                 redisTemplate.expire(REDIS_COURSE_KEY, 1, TimeUnit.DAYS);
                 //将课程添加到学生
-                Set<String> studentSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_STUDENT_KEY, courseId.toString());
+                Set<String> studentSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_STUDENT_KEY, userId);
                 if(studentSet == null){
                     studentSet = userMapper.getCourseIdByStudentId(userId);
                 }
-                if(studentSet.add(String.valueOf(courseId))){
+                if(!studentSet.add(String.valueOf(courseId))){
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "不能重复选择课程");
                 }
-                redisTemplate.opsForHash().put(REDIS_STUDENT_KEY, redisCourseId, studentSet);     //之前数据会被覆盖
+                redisTemplate.opsForHash().put(REDIS_STUDENT_KEY, userId, studentSet);     //之前数据会被覆盖
                 redisTemplate.expire(REDIS_STUDENT_KEY, 1, TimeUnit.DAYS);
                 //课程被选数量+1
                 Integer count = (Integer) redisTemplate.opsForHash().get(REDIS_COUNT_KEY, redisCourseId);
@@ -219,16 +220,16 @@ public class UserServiceImpl implements UserService {
         }
         //更新课程包含学生的数据
         if (courseMap != null) {
-            courseMap.put(String.valueOf(courseId), 1);
+            courseMap.put(String.valueOf(userId), 1);
             redisTemplate.opsForHash().put(REDIS_COURSE_KEY, courseId.toString(), courseMap);
         }
         //更新学生包含课程的数据
-        Set<String> studentSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_STUDENT_KEY, courseId.toString());
+        Set<String> studentSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_STUDENT_KEY, userId);
         if (studentSet != null) {
-            studentSet.remove(userId);
+            studentSet.remove(String.valueOf(courseId));
         }
         if (studentSet != null) {
-            redisTemplate.opsForHash().put(REDIS_STUDENT_KEY, courseId.toString(), studentSet);
+            redisTemplate.opsForHash().put(REDIS_STUDENT_KEY, userId, studentSet);
         }
         redisTemplate.opsForHash().increment(REDIS_COUNT_KEY, courseId.toString(), -1);
         return true;

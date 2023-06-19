@@ -2,10 +2,8 @@ package com.example.entity.VO;
 
 import lombok.Data;
 
-import java.io.Serializable;
-
 @Data
-public class CourseVO implements Serializable {
+public class MyCourseVO {
 
     /**
      * 课程号
@@ -23,17 +21,7 @@ public class CourseVO implements Serializable {
     private String name;
 
     /**
-     * 课程已选人数
-     */
-    private Integer num;
-
-    /**
      * 课程可选最大人数
      */
     private Integer maxNum;
-
-    /**
-     * 该课程是否以及被选
-     */
-    private Integer isChoose;
 }
