@@ -20,8 +20,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-import static com.example.constant.CourseConstant.REDIS_COURSE_KEY;
-import static com.example.constant.CourseConstant.REDIS_FALM_COURSE;
+import static com.example.constant.CourseConstant.*;
 
 @SpringBootTest
 class UserServiceImplTest {
@@ -51,8 +50,8 @@ class UserServiceImplTest {
     public void test(){
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         AuthUser user = new AuthUser();
-        user.setUsername("2020218099");
-        user.setPassword(encoder.encode("falm200212"));
+        user.setUsername("awen");
+        user.setPassword(encoder.encode("12345678"));
         user.setAvatar(" ");
         user.setRole(0);
         user.setName("yhy");
@@ -83,21 +82,45 @@ class UserServiceImplTest {
 
     @Test
     public void preCacheJob(){
-        preCache.preCacheCourse();
+        System.out.println(courseMapper.getCourseByCourseId(Long.valueOf("443044656288")));
     }
 
     @Test
     public void test5(){
-        System.out.println(courseMapper.getall());
+        RLock lock = redissonClient.getLock(REDIS_FALM_COURSE);
+        if(lock.tryLock()){
+            try{
+                //存入Grade表
+                Map<Object, Object> gradeMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
+                for (Map.Entry<Object, Object> entry : gradeMap.entrySet()) {
+                    Long courseId = Long.valueOf(String.valueOf(entry.getKey()));
+                    Set<String> userIdSet = (Set<String>) entry.getValue();
+
+                    for (String studentId : userIdSet) {
+                        if(gradeMapper.getGradeBySidAndCid(studentId, courseId)!=null) {
+                            continue;
+                        }
+                        GradeFactory factory = new GradeFactory();
+                        Grade grade = factory.getGrade(studentId, courseId);
+                        gradeMapper.chooseCourse(grade);
+                    }
+                }
+                //更新Course表
+                Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COUNT_KEY);
+                for (Map.Entry<Object, Object> courseEntry : courseMap.entrySet()) {
+                    String courseId = (String) courseEntry.getKey();
+                    Integer num = (Integer) courseEntry.getValue();
+                    courseMapper.updateCourseNum(Long.valueOf(courseId), num);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                if(lock.isHeldByCurrentThread()){
+                    lock.unlock();
+                }
+            }
+        }
     }
-
-
-//    @Test
-//    public void testRabbitMQCum(){
-//        System.out.println(redisTemplate.keys("*"));
-//        System.out.println(redisTemplate.opsForHash().get(REDIS_COUNT_KEY,  "443043201628"));
-//        System.out.println(redisTemplate.opsForHash().get(REDIS_COURSE_KEY,  "443043201628"));
-//    }
 
     @Test
     public void courseToMemory(){

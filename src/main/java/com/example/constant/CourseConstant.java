@@ -23,6 +23,11 @@ public interface CourseConstant {
     String REDIS_COURSE_KEY = "REDIS:COURSE:KEY";
 
     /**
+     * 获取学生选课选的课程KEY
+     */
+    String REDIS_STUDENT_KEY = "REDIS:STUDENT:KEY";
+
+    /**
      * 获取备选课程数目的Hash的KEY
      */
     String REDIS_COUNT_KEY = "REDIS:COUNT:KEY";

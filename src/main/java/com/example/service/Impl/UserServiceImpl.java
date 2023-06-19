@@ -24,6 +24,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -154,19 +155,33 @@ public class UserServiceImpl implements UserService {
                 String userId = user.getUsername();
                 String redisCourseId = courseId.toString();
                 //学生添加到课程
-                Set<String> courseSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_COURSE_KEY, courseId.toString());
-                if(courseSet == null){
-                    courseSet = courseMapper.getCourseWithUser(courseId);
+                HashMap<String, Integer> courseMap = (HashMap<String, Integer>) redisTemplate.opsForHash().get(REDIS_COURSE_KEY, courseId.toString());
+                if(courseMap == null){
+                    List<String> courseList = courseMapper.getCourseWithUser(courseId);
+                    courseMap = new HashMap<>();
+                    for (String studentId : courseList) {
+                        courseMap.put(studentId, 0);
+                    }
                 }
-                if(!courseSet.add(userId)){
+                if(courseMap.containsKey(userId)){
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "不能重复选择课程");
                 }
-                redisTemplate.opsForHash().put(REDIS_COURSE_KEY, redisCourseId, courseSet);     //之前数据会被覆盖
+                redisTemplate.opsForHash().put(REDIS_COURSE_KEY, redisCourseId, courseMap);     //之前数据会被覆盖
                 redisTemplate.expire(REDIS_COURSE_KEY, 1, TimeUnit.DAYS);
+                //将课程添加到学生
+                Set<String> studentSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_STUDENT_KEY, courseId.toString());
+                if(studentSet == null){
+                    studentSet = userMapper.getCourseIdByStudentId(userId);
+                }
+                if(studentSet.add(String.valueOf(courseId))){
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "不能重复选择课程");
+                }
+                redisTemplate.opsForHash().put(REDIS_STUDENT_KEY, redisCourseId, studentSet);     //之前数据会被覆盖
+                redisTemplate.expire(REDIS_STUDENT_KEY, 1, TimeUnit.DAYS);
                 //课程被选数量+1
                 Integer count = (Integer) redisTemplate.opsForHash().get(REDIS_COUNT_KEY, redisCourseId);
                 if(count == null){
-                    count = courseSet.size()-1;
+                    count = courseMap.size()-1;
                     redisTemplate.opsForHash().put(REDIS_COUNT_KEY, redisCourseId, count);
                 }
                 if(count >= 150){
@@ -190,28 +205,32 @@ public class UserServiceImpl implements UserService {
         //首先判断用户有没有选择这节课
         //需要从两个地方查询，数据库和redis
         Grade grade = gradeMapper.getGradeBySidAndCid(userId, courseId);
-        Set<String> userIdSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_COURSE_KEY, courseId.toString());
+        HashMap<String, Integer> courseMap = (HashMap<String, Integer>) redisTemplate.opsForHash().get(REDIS_COURSE_KEY, courseId.toString());
         if(grade == null){
             //数据库中没有数据，则去判断redis中有没有数据
-            if(userIdSet == null){
+            if(courseMap == null){
                 throw new BusinessException(ErrorCode.NO_AUTH, "用户没有选择该课程");
             }
-            if(!userIdSet.contains(userId)){
+            if(!courseMap.containsKey(userId)){
                 throw new BusinessException(ErrorCode.NO_AUTH, "用户没有选择该课程");
             }
         } else {
             gradeMapper.deleteGradeById(grade.getId());
-
         }
-        //更新缓存中数据
-        if (userIdSet != null) {
-            userIdSet.remove(userId);
+        //更新课程包含学生的数据
+        if (courseMap != null) {
+            courseMap.put(String.valueOf(courseId), 1);
+            redisTemplate.opsForHash().put(REDIS_COURSE_KEY, courseId.toString(), courseMap);
         }
-        if (userIdSet != null) {
-            redisTemplate.opsForHash().put(REDIS_COURSE_KEY, courseId.toString(), userIdSet);
+        //更新学生包含课程的数据
+        Set<String> studentSet = (Set<String>) redisTemplate.opsForHash().get(REDIS_STUDENT_KEY, courseId.toString());
+        if (studentSet != null) {
+            studentSet.remove(userId);
+        }
+        if (studentSet != null) {
+            redisTemplate.opsForHash().put(REDIS_STUDENT_KEY, courseId.toString(), studentSet);
         }
         redisTemplate.opsForHash().increment(REDIS_COUNT_KEY, courseId.toString(), -1);
         return true;
     }
-
 }

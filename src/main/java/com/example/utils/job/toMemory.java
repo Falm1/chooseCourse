@@ -43,10 +43,12 @@ public class toMemory {
         RLock lock = redissonClient.getLock(REDIS_FALM_COURSE);
         if(lock.tryLock()){
             try{
-                Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
-                for (Map.Entry<Object, Object> entry : courseMap.entrySet()) {
+                //存入Grade表
+                Map<Object, Object> gradeMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
+                for (Map.Entry<Object, Object> entry : gradeMap.entrySet()) {
                     Long courseId = Long.valueOf(String.valueOf(entry.getKey()));
                     Set<String> userIdSet = (Set<String>) entry.getValue();
+
                     for (String studentId : userIdSet) {
                         if(gradeMapper.getGradeBySidAndCid(studentId, courseId)!=null) {
                             continue;
@@ -55,6 +57,13 @@ public class toMemory {
                         Grade grade = factory.getGrade(studentId, courseId);
                         gradeMapper.chooseCourse(grade);
                     }
+                }
+                //更新Course表
+                Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COUNT_KEY);
+                for (Map.Entry<Object, Object> courseEntry : courseMap.entrySet()) {
+                    Long courseId = (Long) courseEntry.getKey();
+                    Integer num = (Integer) courseEntry.getValue();
+                    courseMapper.updateCourseNum(courseId, num);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);

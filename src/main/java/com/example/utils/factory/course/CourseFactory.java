@@ -20,6 +20,7 @@ public class CourseFactory implements CoursesFactory<Course> {
         course.setModifyTime(new Date());
         course.setIsDelete(0);
         course.setMaxNum(maxNum);
+        course.setNum(0);
         return course;
     }
 

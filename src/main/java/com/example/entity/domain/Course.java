@@ -69,4 +69,9 @@ public class Course{
      * 课程可选最大人数
      */
     private Integer maxNum;
+
+    /**
+     * 已选人数
+     */
+    private Integer num;
 }

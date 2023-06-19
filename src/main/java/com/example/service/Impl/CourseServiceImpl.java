@@ -1,10 +1,12 @@
 package com.example.service.Impl;
 
+import com.example.entity.Request.PageRequest;
 import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
 import com.example.entity.VO.CourseVO;
+import com.example.entity.VO.MyCourseVO;
 import com.example.entity.VO.UserVO;
 import com.example.entity.domain.AuthUser;
 import com.example.entity.domain.Course;
@@ -18,6 +20,7 @@ import com.example.service.UserService;
 import com.example.utils.factory.course.CourseFactory;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.userdetails.User;
@@ -29,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.example.constant.CourseConstant.REDIS_COUNT_KEY;
 import static com.example.constant.CourseConstant.REDIS_FALM_COURSE;
 
 @Service
@@ -84,13 +88,6 @@ public class CourseServiceImpl implements CourseService {
 
     }
 
-    //缓存双删是为了保持缓存与数据库一致性
-    //出现数据不一致主要原因还是因为修改数据库和修改缓存不是原子操作，会被其他线程插入
-    //先删缓存，更新数据库可能会导致 进程1删除缓存，进程2进入，读取缓存为空，便读取数据库并修改缓存，之后线程一才修改了数据库，最后导致缓存中为旧数据，数据库中为新数据
-    //先改数据库，再删除缓存，可能出现 缓存删除失败，导致不一致，但这种情况很少
-    //但推荐使用缓存延迟双删，即修改先删一次，修改后删一次，再修改后删一次是为了删除再修改数据库这段时间内其他线程存入的脏数据
-    //延时是为了保证其他线程能够执行完毕
-    //此处还可以使用RabbitMQ，使用fansout，直接控制删除缓存和数据库同时进行
     @Override
     public boolean updateCourse(CourseUpdateRequest courseUpdateRequest, HttpServletRequest request) throws InterruptedException {
         redisTemplate.delete(REDIS_FALM_COURSE);
@@ -123,8 +120,11 @@ public class CourseServiceImpl implements CourseService {
         return true;
     }
 
+    //此处取出选课人数可能不是最新的，因此需要将redis中最新人数更新到pageInfo中
     @Override
     public PageInfo<CourseVO> getCourses(CourseSearchRequest courseSearchRequest, HttpServletRequest request) {
+        UserVO user = userService.getMe(request);
+        PageInfo<CourseVO> coursePageInfo;
         //校验参数
         Integer pageNum = courseSearchRequest.getPageNum();
         if(pageNum == null){
@@ -138,17 +138,20 @@ public class CourseServiceImpl implements CourseService {
         if(courseId != null){
             PageHelper.startPage(pageNum, pageSize);
             List<CourseVO> courseVOList = courseMapper.getCourseVOByCourseId(courseId);
-            return new PageInfo<>(courseVOList, 5);
+            PageInfo<CourseVO> coursePage = new PageInfo<>(courseVOList, 5);
+            return getCourseWithNum(coursePage);
         }
         String searchText = courseSearchRequest.getSearchText();
         if(searchText != null){
             PageHelper.startPage(pageNum, pageSize);
             List<CourseVO> courseVOList = courseMapper.getCourseVOBySearchText(searchText);
-            return new PageInfo<>(courseVOList, 5);
+            PageInfo<CourseVO> coursePage = new PageInfo<>(courseVOList, 5);
+            return getCourseWithNum(coursePage);
         }
         PageHelper.startPage(pageNum, pageSize);
         List<CourseVO> courseVOList = courseMapper.getAllCourseVO();
-        return new PageInfo<>(courseVOList, 5);
+        PageInfo<CourseVO> coursePage = new PageInfo<>(courseVOList, 5);
+        return getCourseWithNum(coursePage);
     }
 
     @Transactional(rollbackFor = BusinessException.class)
@@ -175,5 +178,43 @@ public class CourseServiceImpl implements CourseService {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误");
         }
         return true;
+    }
+
+    @Override
+    public PageInfo<MyCourseVO> getMyCourses(PageRequest pageRequest, HttpServletRequest request) {
+        UserVO user = userService.getMe(request);
+        String username = user.getUsername();
+        if(username == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "系统错误");
+        }
+        Integer pageNum = pageRequest.getPageNum();
+        if(pageNum == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "参数为空");
+        }
+        Integer pageSize = pageRequest.getPageSize();
+        if(pageSize == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "参数为空");
+        }
+        PageHelper.startPage(pageNum, pageSize);
+        List<MyCourseVO> courseList = courseMapper.getMyCourseByUsername(username);
+        PageInfo<MyCourseVO> coursePage = new PageInfo<>(courseList, 5);
+        return  coursePage;
+    }
+
+    private PageInfo<CourseVO> getCourseWithNum(PageInfo<CourseVO> pageInfo){
+        List<CourseVO> courseList = pageInfo.getList();
+        for (CourseVO courseVO : courseList) {
+            Long courseId = courseVO.getCourseId();
+            if(courseId == null){
+                continue;
+            }
+            Integer num = (Integer) redisTemplate.opsForHash().get(REDIS_COUNT_KEY, courseId.toString());
+            if(num == null){
+                continue;
+            }
+            courseVO.setNum(num);
+        }
+        pageInfo.setList(courseList);
+        return pageInfo;
     }
 }

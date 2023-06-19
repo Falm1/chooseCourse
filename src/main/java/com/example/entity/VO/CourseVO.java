@@ -23,6 +23,11 @@ public class CourseVO implements Serializable {
     private String name;
 
     /**
+     * 课程已选人数
+     */
+    private Integer num;
+
+    /**
      * 课程可选最大人数
      */
     private Integer maxNum;

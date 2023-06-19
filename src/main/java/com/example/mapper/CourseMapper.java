@@ -1,7 +1,9 @@
 package com.example.mapper;
 
 import com.example.entity.VO.CourseVO;
+import com.example.entity.VO.MyCourseVO;
 import com.example.entity.domain.Course;
+import com.github.pagehelper.Page;
 import io.swagger.models.auth.In;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -11,6 +13,7 @@ import org.apache.ibatis.annotations.Update;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Mapper
@@ -59,6 +62,14 @@ public interface CourseMapper {
                      @Param("teacherId") String teacherId,
                      @Param("maxNum") Integer maxNum);
 
+    @Update("UPDATE " +
+            "   db_course " +
+            "SET " +
+            "   num = #{num} " +
+            "WHERE " +
+            "   courseId = #{courseId} AND isDelete = 0")
+    int updateCourseNum(@Param("courseId") Long courseId,
+                        @Param("num") Integer num);
 
     @Select("SELECT " +
             "   * " +
@@ -73,20 +84,39 @@ public interface CourseMapper {
             "FROM " +
             "   courseTeacherView " +
             "WHERE " +
-            "   courseName = #{searchTeat} OR name = #{searchTeat}")
-    List<CourseVO> getCourseVOBySearchText(String searchTeat);
+            "   courseName = #{searchTeat} OR name = #{searchText}")
+    List<CourseVO> getCourseVOBySearchText(String searchText);
 
-    @Select("SELECT * FROM courseTeacherView")
+    @Select("SELECT courseId, courseName, name, maxNum, num FROM courseTeacherView")
     List<CourseVO> getAllCourseVO();
 
     @Update("UPDATE db_course SET isDelete = 1 WHERE courseId = #{courseId}")
     int deleteCourse(Long courseId);
-    @Select("select count(*) from courseTeacherView")
-    int getall();
 
     @Select("SELECT COUNT(*) FROM db_course WHERE courseId = #{courseId}")
     Integer getCountByCourseId(long courseId);
 
     @Select("SELECT studentId FROM db_grade WHERE courseId = #{courseId}")
-    Set<String> getCourseWithUser(Long courseId);
+    List<String> getCourseWithUser(Long courseId);
+
+    @Select("SELECT COUNT(*) FROM db_grade WHERE courseId = #{courseId}")
+    Integer getCourseNumByCourseId(Long courseId);
+
+    /**
+     * @author falm
+     * @param
+     * @return
+     * @Description TODO 覆盖pageHelp的计算总数方法
+     * @Date 2021/6/3 16:57
+     */
+    @Select("SELECT COUNT(courseId) FROM db_course")
+    Long getAllCourseVO_COUNT();
+
+    /**
+     * 获取当前用户已选课程
+     * @param username 用户名
+     * @return 课程列表
+     */
+    @Select("SELECT * FROM courseStudentView WHERE studentId = #{username}")
+    List<MyCourseVO> getMyCourseByUsername(String username);
 }

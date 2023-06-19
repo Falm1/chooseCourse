@@ -15,13 +15,14 @@
             <result property="modifyUser" column="modifyUser" jdbcType="VARCHAR"/>
             <result property="modifyTime" column="modifyTime" jdbcType="TIMESTAMP"/>
             <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
-            <result property="maxNum" column="maxNum" jdbcType="TINYINT"/>
+            <result property="maxNum" column="maxNum" jdbcType="INTEGER"/>
+            <result property="num" column="num" jdbcType="INTEGER"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         courseId,courseName,teacherId,
         status,parentId,createUser,
         createTime,modifyUser,modifyTime,
-        isDelete, maxNum
+        isDelete, maxNum, num
     </sql>
 </mapper>

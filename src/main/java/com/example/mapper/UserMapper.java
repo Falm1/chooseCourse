@@ -4,6 +4,9 @@ import com.example.entity.domain.AuthUser;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+import java.util.Set;
+
 @Mapper
 public interface UserMapper {
 
@@ -27,4 +30,7 @@ public interface UserMapper {
 
     @Update("UPDATE db_user SET password = #{password} where username = #{username} AND isDelete = 0")
     boolean updatePassword(@Param("username") String username, @Param("password") String password);
+
+    @Select("SELECT courseId FROM db_grade WHERE studentId = #{username}")
+    Set<String> getCourseIdByStudentId(String username);
 }

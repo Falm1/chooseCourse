@@ -43,7 +43,7 @@ public class OwnSwaggerConfig implements ApiListingScannerPlugin
                 .produces(Sets.newHashSet(MediaType.APPLICATION_JSON_VALUE))
                 .build();
 
-        ApiDescription loginApiDescription = new ApiDescription("用户服务", "/api/user/auth/login", "描述", Arrays.asList(usernamePasswordOperation), false);
+        ApiDescription loginApiDescription = new ApiDescription("用户中心", "/api/user/auth/login", "描述", Arrays.asList(usernamePasswordOperation), false);
 
         return Arrays.asList(loginApiDescription);
     }

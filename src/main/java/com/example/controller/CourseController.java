@@ -1,10 +1,12 @@
 package com.example.controller;
 
+import com.example.entity.Request.PageRequest;
 import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
 import com.example.entity.VO.CourseVO;
+import com.example.entity.VO.MyCourseVO;
 import com.example.ex.BusinessException;
 import com.example.ex.ErrorCode;
 import com.example.service.CourseService;
@@ -88,5 +90,16 @@ public class CourseController {
         return RestBean.success("删除课程成功", res);
     }
 
+    /**
+     * 获取当前用户选课列表
+     */
+    @PostMapping("/get-myCourse")
+    public RestBean<PageInfo<MyCourseVO>> getMyCourse(PageRequest pageRequest, HttpServletRequest request){
+        if(pageRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "参数为空");
+        }
+        PageInfo<MyCourseVO> page = courseService.getMyCourses(pageRequest, request);
+        return RestBean.success("获取课程成功", page);
+    }
 
 }
