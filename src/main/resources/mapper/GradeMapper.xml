@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.GradeMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.entity.domain.Grade">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+            <result property="nomalGrade" column="nomalGrade" jdbcType="DECIMAL"/>
+            <result property="nomalPercent" column="nomalPercent" jdbcType="DECIMAL"/>
+            <result property="testGrade" column="testGrade" jdbcType="DECIMAL"/>
+            <result property="testPercent" column="testPercent" jdbcType="DECIMAL"/>
+            <result property="workGrade" column="workGrade" jdbcType="DECIMAL"/>
+            <result property="workPercent" column="workPercent" jdbcType="DECIMAL"/>
+            <result property="examGrade" column="examGrade" jdbcType="DECIMAL"/>
+            <result property="examPercent" column="examPercent" jdbcType="DECIMAL"/>
+            <result property="finalGrade" column="finalGrade" jdbcType="DECIMAL"/>
+            <result property="fianlPercent" column="fianlPercent" jdbcType="DECIMAL"/>
+            <result property="createUser" column="createUser" jdbcType="VARCHAR"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="modifyUser" column="modifyUser" jdbcType="VARCHAR"/>
+            <result property="modifyTime" column="modifyTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,nomalGrade,nomalPercent,
+        testGrade,testPercent,workGrade,
+        workPercent,examGrade,examPercent,
+        finalGrade,fianlPercent,createUser,
+        createTime,modifyUser,modifyTime,
+        isDelete
+    </sql>
+</mapper>
