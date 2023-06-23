@@ -1,10 +1,15 @@
 package com.example.service;
 
+import com.example.entity.Request.PageRequest;
 import com.example.entity.Request.user.UpdatePwdRequest;
+import com.example.entity.VO.MyCourseVO;
 import com.example.entity.VO.UserVO;
+import com.github.pagehelper.PageInfo;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 public interface UserService extends UserDetailsService {
     /**
@@ -51,7 +56,7 @@ public interface UserService extends UserDetailsService {
      * @param user Http请求
      * @return
      */
-    Boolean chooseCourse(Long courseId, UserVO user);
+    Boolean chooseCourse(String courseId, UserVO user);
 
     /**
      * 退课
@@ -60,5 +65,12 @@ public interface UserService extends UserDetailsService {
      * @param user     登录用户
      * @return
      */
-    Boolean exitCourse(Long courseId, UserVO user);
+    Boolean exitCourse(String courseId, UserVO user);
+
+    /**
+     * 获取当前登录用户选课列表
+     * @param request http请求
+     * @return 用户选课列表
+     */
+    PageInfo<MyCourseVO> getMyCourses(PageRequest pageRequest, HttpServletRequest request);
 }

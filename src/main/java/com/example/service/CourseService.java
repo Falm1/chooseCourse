@@ -1,12 +1,11 @@
 package com.example.service;
 
-import com.example.entity.Request.PageRequest;
 import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
+import com.example.entity.VO.CourseDetails;
 import com.example.entity.VO.CourseVO;
-import com.example.entity.VO.MyCourseVO;
 import com.github.pagehelper.PageInfo;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,9 +46,9 @@ public interface CourseService {
     boolean deleteCourse(CourseDeleteRequest courseDeleteRequest, HttpServletRequest request);
 
     /**
-     * 获取当前登录用户选课列表
-     * @param request http请求
-     * @return 用户选课列表
+     * 获取某课程的详细信息
+     * @param courseId 课程Id
+     * @return 课程信息
      */
-    PageInfo<MyCourseVO> getMyCourses(PageRequest pageRequest, HttpServletRequest request);
+    CourseDetails getCourseDetails(String courseId);
 }

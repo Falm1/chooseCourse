@@ -2,10 +2,12 @@ package com.example.service.Impl;
 
 import com.example.entity.domain.AuthUser;
 import com.example.entity.domain.Grade;
+import com.example.entity.domain.SC;
 import com.example.mapper.CourseMapper;
-import com.example.mapper.GradeMapper;
+import com.example.mapper.ScMapper;
 import com.example.mapper.UserMapper;
-import com.example.utils.factory.grade.GradeFactory;
+import com.example.service.UserService;
+import com.example.utils.factory.grade.SCFactory;
 import com.example.utils.job.ImportData;
 import com.example.utils.job.PreCache;
 import org.junit.jupiter.api.Test;
@@ -17,8 +19,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import static com.example.constant.CourseConstant.*;
 
@@ -26,100 +28,33 @@ import static com.example.constant.CourseConstant.*;
 class UserServiceImplTest {
 
     @Resource
-    CourseMapper courseMapper;
-
-    @Resource
     UserMapper userMapper;
 
     @Resource
-    ImportData importData;
-
-    @Resource
-    PreCache preCache;
-
+    RedissonClient redissonClient;
     @Resource
     RedisTemplate<String, Object> redisTemplate;
 
     @Resource
-    RedissonClient redissonClient;
+    ScMapper scMapper;
 
     @Resource
-    GradeMapper gradeMapper;
+    CourseMapper courseMapper;
 
     @Test
-    public void test(){
+    public void insertStudent(){
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         AuthUser user = new AuthUser();
-        user.setUsername("awen");
-        user.setPassword(encoder.encode("12345678"));
-        user.setAvatar(" ");
-        user.setRole(0);
-        user.setName("yhy");
-        user.setGender(1);
-        user.setGrade("2020");
-        user.setInstitute("aaa");
-        user.setMajor("aaa");
-        user.setPhone("aaa");
-        user.setEmail("aaa");
-        user.setStatus(1);
-        user.setCreateUser("111");
+        user.setUsername("2020218051");
+        user.setPassword(encoder.encode("falm200212"));
+        user.setRole(2);
+        user.setCreateUser("");
         user.setCreateTime(new Date());
-        user.setModifyUser("111");
+        user.setModifyUser("");
         user.setModifyTime(new Date());
         user.setIsDelete(0);
-        userMapper.insertUser(user);
-    }
 
-    @Test
-    public void test2(){
-        importData.importStudentData();
-    }
-
-    @Test
-    public void ThreadTest(){
-        importData.importCourse();
-    }
-
-    @Test
-    public void preCacheJob(){
-        System.out.println(courseMapper.getCourseByCourseId(Long.valueOf("443044656288")));
-    }
-
-    @Test
-    public void test5(){
-        RLock lock = redissonClient.getLock(REDIS_FALM_COURSE);
-        if(lock.tryLock()){
-            try{
-                //存入Grade表
-                Map<Object, Object> gradeMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
-                for (Map.Entry<Object, Object> entry : gradeMap.entrySet()) {
-                    Long courseId = Long.valueOf(String.valueOf(entry.getKey()));
-                    Set<String> userIdSet = (Set<String>) entry.getValue();
-
-                    for (String studentId : userIdSet) {
-                        if(gradeMapper.getGradeBySidAndCid(studentId, courseId)!=null) {
-                            continue;
-                        }
-                        GradeFactory factory = new GradeFactory();
-                        Grade grade = factory.getGrade(studentId, courseId);
-                        gradeMapper.chooseCourse(grade);
-                    }
-                }
-                //更新Course表
-                Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COUNT_KEY);
-                for (Map.Entry<Object, Object> courseEntry : courseMap.entrySet()) {
-                    String courseId = (String) courseEntry.getKey();
-                    Integer num = (Integer) courseEntry.getValue();
-                    courseMapper.updateCourseNum(Long.valueOf(courseId), num);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                if(lock.isHeldByCurrentThread()){
-                    lock.unlock();
-                }
-            }
-        }
+        userMapper.addUser(user);
     }
 
     @Test
@@ -127,18 +62,28 @@ class UserServiceImplTest {
         RLock lock = redissonClient.getLock(REDIS_FALM_COURSE);
         if(lock.tryLock()){
             try{
-                Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
-                for (Map.Entry<Object, Object> entry : courseMap.entrySet()) {
-                    Long courseId = Long.valueOf(String.valueOf(entry.getKey()));
-                    Set<String> userIdSet = (Set<String>) entry.getValue();
-                    for (String studentId : userIdSet) {
-                        if(gradeMapper.getGradeBySidAndCid(studentId, courseId)!=null) {
+                //存入Grade表
+                Map<Object, Object> gradeMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
+                for (Map.Entry<Object, Object> entry : gradeMap.entrySet()) {
+                    String courseId = String.valueOf(entry.getKey());
+                    HashMap<String, Integer> userIdMap = (HashMap<String, Integer>) entry.getValue();
+                    for (Map.Entry<String, Integer> studentEntry : userIdMap.entrySet()) {
+                        String studentId = studentEntry.getKey();
+                        if(scMapper.getSCByStudentIdAndCourseId(studentId, courseId) != null){
                             continue;
                         }
-                        GradeFactory factory = new GradeFactory();
-                        Grade grade = factory.getGrade(studentId, courseId);
-                        gradeMapper.chooseCourse(grade);
+                        Integer isDelete = studentEntry.getValue();
+                        SCFactory scFactory = new SCFactory();
+                        SC selectCourse = scFactory.getSC(studentId, courseId, isDelete);
+                        scMapper.addSC(selectCourse);
                     }
+                }
+                //更新Course表
+                Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COUNT_KEY);
+                for (Map.Entry<Object, Object> courseEntry : courseMap.entrySet()) {
+                    Long courseId = Long.valueOf((String) courseEntry.getKey());
+                    Integer num = (Integer) courseEntry.getValue();
+                    courseMapper.updateCourseNum(courseId, num);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -149,4 +94,10 @@ class UserServiceImplTest {
             }
         }
     }
+
+    @Test
+    public void test(){
+        System.out.println(userMapper.getStudentByCourseId("1"));
+    }
+
 }

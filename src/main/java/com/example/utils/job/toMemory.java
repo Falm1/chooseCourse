@@ -1,22 +1,19 @@
 package com.example.utils.job;
 
-import com.example.entity.domain.Course;
-import com.example.entity.domain.Grade;
+import com.example.entity.domain.SC;
 import com.example.mapper.CourseMapper;
-import com.example.mapper.GradeMapper;
-import com.example.utils.factory.grade.GradeFactory;
+import com.example.mapper.ScMapper;
+import com.example.utils.factory.grade.SCFactory;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import static com.example.constant.CourseConstant.*;
 
@@ -33,7 +30,7 @@ public class toMemory {
     CourseMapper courseMapper;
 
     @Resource
-    GradeMapper gradeMapper;
+    ScMapper scMapper;
 
     @Resource
     RedisTemplate<String, Object> redisTemplate;
@@ -46,22 +43,23 @@ public class toMemory {
                 //存入Grade表
                 Map<Object, Object> gradeMap = redisTemplate.opsForHash().entries(REDIS_COURSE_KEY);
                 for (Map.Entry<Object, Object> entry : gradeMap.entrySet()) {
-                    Long courseId = Long.valueOf(String.valueOf(entry.getKey()));
-                    Set<String> userIdSet = (Set<String>) entry.getValue();
-
-                    for (String studentId : userIdSet) {
-                        if(gradeMapper.getGradeBySidAndCid(studentId, courseId)!=null) {
+                    String courseId = String.valueOf(entry.getKey());
+                    HashMap<String, Integer> userIdMap = (HashMap<String, Integer>) entry.getValue();
+                    for (Map.Entry<String, Integer> studentEntry : userIdMap.entrySet()) {
+                        String studentId = studentEntry.getKey();
+                        if(scMapper.getSCByStudentIdAndCourseId(studentId, courseId) != null){
                             continue;
                         }
-                        GradeFactory factory = new GradeFactory();
-                        Grade grade = factory.getGrade(studentId, courseId);
-                        gradeMapper.chooseCourse(grade);
+                        Integer isDelete = studentEntry.getValue();
+                        SCFactory scFactory = new SCFactory();
+                        SC selectCourse = scFactory.getSC(studentId, courseId, isDelete);
+                        scMapper.addSC(selectCourse);
                     }
                 }
                 //更新Course表
                 Map<Object, Object> courseMap = redisTemplate.opsForHash().entries(REDIS_COUNT_KEY);
                 for (Map.Entry<Object, Object> courseEntry : courseMap.entrySet()) {
-                    Long courseId = (Long) courseEntry.getKey();
+                    Long courseId = Long.valueOf((String) courseEntry.getKey());
                     Integer num = (Integer) courseEntry.getValue();
                     courseMapper.updateCourseNum(courseId, num);
                 }

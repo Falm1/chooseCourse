@@ -1,11 +1,8 @@
 package com.example.utils.job;
 
-import com.example.config.RedissonConfig;
 import com.example.entity.VO.CourseVO;
 import com.example.mapper.CourseMapper;
-import com.example.service.CourseService;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.Redisson;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;

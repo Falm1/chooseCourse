@@ -1,21 +1,17 @@
 package com.example.controller;
 
-import com.example.entity.Request.PageRequest;
 import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
+import com.example.entity.VO.CourseDetails;
 import com.example.entity.VO.CourseVO;
-import com.example.entity.VO.MyCourseVO;
 import com.example.ex.BusinessException;
 import com.example.ex.ErrorCode;
 import com.example.service.CourseService;
 import com.example.utils.RestBean;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
-import io.swagger.models.auth.In;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -90,16 +86,12 @@ public class CourseController {
         return RestBean.success("删除课程成功", res);
     }
 
-    /**
-     * 获取当前用户选课列表
-     */
-    @PostMapping("/get-myCourse")
-    public RestBean<PageInfo<MyCourseVO>> getMyCourse(PageRequest pageRequest, HttpServletRequest request){
-        if(pageRequest == null){
-            throw new BusinessException(ErrorCode.PARAMS_NULL, "参数为空");
+    @PostMapping("/get-course-details")
+    public RestBean<CourseDetails> doGetCourseDetails(@RequestParam("courseId") String courseId){
+        if(courseId == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "参数错误");
         }
-        PageInfo<MyCourseVO> page = courseService.getMyCourses(pageRequest, request);
-        return RestBean.success("获取课程成功", page);
+        CourseDetails courseDetails = courseService.getCourseDetails(courseId);
+        return RestBean.success("获取课程信息成功", courseDetails);
     }
-
 }

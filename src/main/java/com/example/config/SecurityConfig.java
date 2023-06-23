@@ -2,7 +2,14 @@ package com.example.config;
 
 import com.alibaba.fastjson.JSONObject;
 import com.example.entity.VO.UserVO;
+import com.example.entity.domain.Admin;
 import com.example.entity.domain.AuthUser;
+import com.example.entity.domain.Student;
+import com.example.entity.domain.Teacher;
+import com.example.entity.enums.UserRoleEnum;
+import com.example.mapper.AdminMapper;
+import com.example.mapper.StudentMapper;
+import com.example.mapper.TeacherMapper;
 import com.example.mapper.UserMapper;
 import com.example.utils.RestBean;
 import io.swagger.annotations.Api;
@@ -38,6 +45,15 @@ public class SecurityConfig {
 
     @Resource
     UserMapper userMapper;
+
+    @Resource
+    AdminMapper adminMapper;
+
+    @Resource
+    StudentMapper studentMapper;
+
+    @Resource
+    TeacherMapper teacherMapper;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -104,10 +120,28 @@ public class SecurityConfig {
         //如果请求时login结尾的，表明这时登录成功的返回
         if(request.getRequestURL().toString().endsWith("login")){
             //使用Spring-Security后，登录成功会将用户信息保存到Security的User类里面
-            User userName = (User)authentication.getPrincipal();                        //这个是Security默认保存的，只保存了用户名
-            AuthUser user = userMapper.getUserByUsername(userName.getUsername());
+            User user = (User)authentication.getPrincipal();                        //这个是Security默认保存的，只保存了用户名
+            String username = user.getUsername();
+            AuthUser authUser = userMapper.getUserByUsername(username);
+            Integer role = authUser.getRole();
+            UserRoleEnum userRoleEnum = UserRoleEnum.getUserRoleEnumByRole(role);
             UserVO userVO = new UserVO();
-            BeanUtils.copyProperties(user, userVO);
+            if(UserRoleEnum.ADMIN.equals(userRoleEnum)){                           //从管理员信息表中获取信息
+                Admin admin = adminMapper.getAdminByAdminId(username);
+                BeanUtils.copyProperties(admin, userVO);
+                userVO.setUsername(admin.getAdminId());
+                userVO.setRole(role);
+            } else if(UserRoleEnum.TEACHER.equals(userRoleEnum)){
+                Teacher teacher = teacherMapper.getTeacherByTeacherId(username);
+                BeanUtils.copyProperties(teacher, userVO);
+                userVO.setUsername(teacher.getTeacherId());
+                userVO.setRole(role);
+            } else{
+                Student student = studentMapper.getStudentByStudentId(username);
+                BeanUtils.copyProperties(student, userVO);
+                userVO.setUsername(student.getStudentId());
+                userVO.setRole(role);
+            }
             request.getSession().setAttribute(USER_LOGIN_STATE, userVO);
             response.getWriter().write(JSONObject.toJSONString(RestBean.success("登陆成功")));
         }else{

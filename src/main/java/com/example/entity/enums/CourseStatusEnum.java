@@ -12,7 +12,7 @@ public enum CourseStatusEnum {
     Work(2, "作业"),
     Exam(3, "考试");
 
-    public static CourseStatusEnum getValue(Integer value){
+    public static CourseStatusEnum getCourseStatusEnum(Integer value){
         if(value == null){
             return null;
         }
