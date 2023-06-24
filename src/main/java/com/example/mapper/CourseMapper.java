@@ -116,7 +116,7 @@ public interface CourseMapper {
      * @param teacherId 学生Id
      * @return
      */
-    @Select("SELECT * FROM studentWithCourse WHERE teacherId = #{teacherId}")
+    @Select("SELECT * FROM courseWithTeacher WHERE teacherId = #{teacherId}")
     List<MyCourseVO> getMyCourseByTeacherId(String teacherId);
 
     /**

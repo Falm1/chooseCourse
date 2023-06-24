@@ -1,9 +1,6 @@
 package com.example.service.Impl;
 
-import com.example.entity.domain.AuthUser;
-import com.example.entity.domain.Grade;
-import com.example.entity.domain.SC;
-import com.example.entity.domain.With;
+import com.example.entity.domain.*;
 import com.example.mapper.CourseMapper;
 import com.example.mapper.ScMapper;
 import com.example.mapper.UserMapper;
@@ -111,4 +108,22 @@ class UserServiceImplTest {
         System.out.println(with.getId());
     }
 
+    @Test
+    public void addCourse(){
+        for(int i = 1;i<=12;i++){
+            Course course = new Course();
+            course.setCourseId((long) i);
+            course.setTeacherId("2020218050");
+            course.setStatus(0);
+            course.setParentId(0L);
+            course.setCreateUser("");
+            course.setCreateTime(new Date());
+            course.setModifyUser("");
+            course.setModifyTime(new Date());
+            course.setIsDelete(0);
+            course.setMaxNum(90);
+            course.setNum(0);
+            courseMapper.addCourse(course);
+        }
+    }
 }
