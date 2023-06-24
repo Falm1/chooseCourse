@@ -1,12 +1,13 @@
 package com.example.service.Impl;
+import java.util.Date;
+import com.example.entity.VO.*;
+import com.example.entity.domain.With;
+import com.google.common.collect.Lists;
 
 import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
-import com.example.entity.VO.CourseDetails;
-import com.example.entity.VO.CourseVO;
-import com.example.entity.VO.UserVO;
 import com.example.entity.domain.Course;
 import com.example.entity.domain.Student;
 import com.example.entity.enums.CourseStatusEnum;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +58,7 @@ public class CourseServiceImpl implements CourseService {
      * @param courseAddRequest
      * @param  request
      */
+    @Transactional(rollbackFor = BusinessException.class)
     public boolean addCourse(CourseAddRequest courseAddRequest, HttpServletRequest request) {
         UserVO user = userService.getMe(request);
         Integer status = courseAddRequest.getStatus();
@@ -66,8 +69,8 @@ public class CourseServiceImpl implements CourseService {
         if(courseStatusEnum == null){
             throw new BusinessException(ErrorCode.PARAMS_NULL, "系统错误");
         }
-        String courseId = courseAddRequest.getCourseId();
-        if(courseId == null){
+        String courseName = courseAddRequest.getCourseName();
+        if(courseName == null){
             throw new BusinessException(ErrorCode.PARAMS_NULL, "参数错误");
         }
         String teacherId = courseAddRequest.getTeacherId();
@@ -86,9 +89,47 @@ public class CourseServiceImpl implements CourseService {
         if(num == null){
             num = 0;
         }
-        CourseFactory factory = new CourseFactory();
-        Course course = factory.getCourse(courseId, teacherId, parentId, status, maxNum, num);
-        courseMapper.addCourse(course);
+        BigDecimal percent = courseAddRequest.getPercent();
+        if(percent == null){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "参数错误");
+        }
+        //添加详细信息表
+        With with = new With();
+        with.setCourseName(courseName);
+        with.setPercent(percent);
+        with.setCreateUser("");
+        with.setCreateTime(new Date());
+        with.setModifyUser("");
+        with.setModifyTime(new Date());
+        with.setIsDelete(0);
+        Integer res = null;
+        if(courseStatusEnum.equals(CourseStatusEnum.Work)){
+            res = courseMapper.addWork(with);
+        } else if(courseStatusEnum.equals(CourseStatusEnum.Test)){
+            res = courseMapper.addTest(with);
+        } else if(courseStatusEnum.equals(CourseStatusEnum.Exam)){
+            res = courseMapper.addExam(with);
+        }
+        if(res == null || res != 1){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误");
+        }
+        Long couId = with.getId();
+        Course course = new Course();
+        course.setCourseId(couId);
+        course.setTeacherId(teacherId);
+        course.setStatus(status);
+        course.setParentId(parentId);
+        course.setCreateUser("");
+        course.setCreateTime(new Date());
+        course.setModifyUser("");
+        course.setModifyTime(new Date());
+        course.setIsDelete(0);
+        course.setMaxNum(maxNum);
+        course.setNum(num);
+        res = courseMapper.addCourse(course);
+        if(res == null || res != 1){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误");
+        }
         return true;
     }
 
@@ -164,7 +205,6 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public boolean deleteCourse(CourseDeleteRequest courseDeleteRequest, HttpServletRequest request) {
         UserVO user = userService.getMe(request);
-        userService.isAdmin(user);
         Long id = courseDeleteRequest.getId();
         if(id == null){
             throw new BusinessException(ErrorCode.PARAMS_NULL, "找不到该课程");
@@ -172,6 +212,14 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseMapper.getCourseById(id);
         if(course == null){
             throw new BusinessException(ErrorCode.PARAMS_NULL, "找不到该课程");
+        }
+        //鉴权
+        Integer status = course.getStatus();
+        CourseStatusEnum courseStatusEnum = CourseStatusEnum.getCourseStatusEnum(status);
+        if(CourseStatusEnum.Course.equals(courseStatusEnum)){
+            userService.isAdmin(user);
+        }else{
+            userService.isTeacher(user);
         }
         //删除课程以及学生选课的信息
         //使用事务保持数据的一致性
@@ -198,6 +246,30 @@ public class CourseServiceImpl implements CourseService {
         courseDetails.setCourseList(courseList);
         courseDetails.setStudentList(userVOList);
         return courseDetails;
+    }
+
+    @Override
+    public List<CourseCategory> getCourseCategory(String courseId) {
+        List<CourseCategory> courseCategorieList = new ArrayList<>();
+        List<CourseCate> courseList = courseMapper.getWithByCourseIdAndStatus(courseId, 1);
+        CourseCategory test = new CourseCategory();
+        test.setValue(1L);
+        test.setLabel("实验");
+        test.setChildren(courseList);
+        courseCategorieList.add(test);
+        courseList = courseMapper.getWithByCourseIdAndStatus(courseId, 2);
+        CourseCategory work = new CourseCategory();
+        work.setValue(2L);
+        work.setLabel("作业");
+        work.setChildren(courseList);
+        courseCategorieList.add(work);
+        courseList = courseMapper.getWithByCourseIdAndStatus(courseId, 3);
+        CourseCategory exam = new CourseCategory();
+        exam.setValue(3L);
+        exam.setLabel("考试");
+        exam.setChildren(courseList);
+        courseCategorieList.add(exam);
+        return courseCategorieList;
     }
 
     /**

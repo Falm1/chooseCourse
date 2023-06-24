@@ -18,7 +18,7 @@ public class Course implements Serializable {
     /**
      * 课程Id
      */
-    private String courseId;
+    private Long courseId;
 
     /**
      * 教师号

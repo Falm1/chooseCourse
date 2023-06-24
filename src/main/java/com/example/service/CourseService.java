@@ -4,6 +4,7 @@ import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
+import com.example.entity.VO.CourseCategory;
 import com.example.entity.VO.CourseDetails;
 import com.example.entity.VO.CourseVO;
 import com.github.pagehelper.PageInfo;
@@ -51,4 +52,11 @@ public interface CourseService {
      * @return 课程信息
      */
     CourseDetails getCourseDetails(String courseId);
+
+    /**
+     * 获取课程信息的分类表，便于前端展示
+     * @param courseId 课程号
+     * @return 课程分类列表
+     */
+    List<CourseCategory> getCourseCategory(String courseId);
 }

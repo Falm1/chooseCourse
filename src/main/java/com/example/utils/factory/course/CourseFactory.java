@@ -9,7 +9,6 @@ public class CourseFactory extends AbstractCourseFactory {
     @Override
     public Course getCourse(String courseId, String teacherId, Long parentId, Integer status, Integer maxNum, Integer num) {
         Course course = new Course();
-        course.setCourseId(courseId);
         course.setTeacherId(teacherId);
         course.setStatus(status);
         course.setParentId(parentId);
@@ -20,7 +19,6 @@ public class CourseFactory extends AbstractCourseFactory {
         course.setIsDelete(0);
         course.setMaxNum(maxNum);
         course.setNum(num);
-
         return course;
     }
 }

@@ -3,6 +3,7 @@ package com.example.service.Impl;
 import com.example.entity.domain.AuthUser;
 import com.example.entity.domain.Grade;
 import com.example.entity.domain.SC;
+import com.example.entity.domain.With;
 import com.example.mapper.CourseMapper;
 import com.example.mapper.ScMapper;
 import com.example.mapper.UserMapper;
@@ -18,6 +19,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -97,7 +99,16 @@ class UserServiceImplTest {
 
     @Test
     public void test(){
-        System.out.println(userMapper.getStudentByCourseId("1"));
+        With with = new With();
+        with.setCourseName("111");
+        with.setPercent(new BigDecimal("0.3"));
+        with.setCreateUser("");
+        with.setCreateTime(new Date());
+        with.setModifyUser("");
+        with.setModifyTime(new Date());
+        with.setIsDelete(0);
+        courseMapper.addWork(with);
+        System.out.println(with.getId());
     }
 
 }

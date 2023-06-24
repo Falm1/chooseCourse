@@ -51,6 +51,13 @@ public interface UserService extends UserDetailsService {
     boolean isTeacher(UserVO user);
 
     /**
+     * 获取用户是否是学生
+     * @param user 当前用户
+     * @return 是否是老师
+     */
+    boolean isStudent(UserVO user);
+
+    /**
      *
      * @param courseId 课程Id
      * @param user Http请求

@@ -43,7 +43,7 @@ public interface ScMapper {
      * @return 是否删除成功
      */
     @Update("UPDATE db_SC SET isDelete = 1 WHERE courseId = #{courseId}")
-    int deleteSCByCourseId(String courseId);
+    int deleteSCByCourseId(Long courseId);
 }
 
 

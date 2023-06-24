@@ -3,13 +3,14 @@ package com.example.entity.Request.course;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Data
 public class CourseAddRequest implements Serializable {
     /**
-     * 课程Id
+     * 名称
      */
-    private String courseId;
+    private String courseName;
 
     /**
      * 教师号
@@ -35,5 +36,10 @@ public class CourseAddRequest implements Serializable {
      * 课程已选人数
      */
     private Integer num;
+
+    /**
+     * 占百分比
+     */
+    private BigDecimal percent;
 
 }

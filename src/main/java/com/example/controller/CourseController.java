@@ -4,6 +4,7 @@ import com.example.entity.Request.course.CourseAddRequest;
 import com.example.entity.Request.course.CourseDeleteRequest;
 import com.example.entity.Request.course.CourseSearchRequest;
 import com.example.entity.Request.course.CourseUpdateRequest;
+import com.example.entity.VO.CourseCategory;
 import com.example.entity.VO.CourseDetails;
 import com.example.entity.VO.CourseVO;
 import com.example.ex.BusinessException;
@@ -92,6 +93,15 @@ public class CourseController {
             throw new BusinessException(ErrorCode.PARAMS_NULL, "参数错误");
         }
         CourseDetails courseDetails = courseService.getCourseDetails(courseId);
+        return RestBean.success("获取课程信息成功", courseDetails);
+    }
+
+    @PostMapping("/get-course-category")
+    public RestBean<List<CourseCategory>> getCourseCategory(@RequestParam("courseId") String courseId){
+        if(courseId == null){
+            throw new BusinessException(ErrorCode.PARAMS_NULL, "参数错误");
+        }
+        List<CourseCategory> courseDetails = courseService.getCourseCategory(courseId);
         return RestBean.success("获取课程信息成功", courseDetails);
     }
 }

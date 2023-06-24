@@ -50,4 +50,9 @@ public class CourseVO implements Serializable {
      * 类型 0-课程 1-实验 2-作业 3-期末考试
      */
     private Integer status;
+
+    /**
+     * 课程分数占比
+     */
+    private Double percent;
 }

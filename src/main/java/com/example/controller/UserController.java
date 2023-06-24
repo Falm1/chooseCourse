@@ -122,4 +122,5 @@ public class UserController {
         PageInfo<MyCourseVO> page = userService.getMyCourses(pageRequest, request);
         return RestBean.success("获取课程成功", page);
     }
+
 }

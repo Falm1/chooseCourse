@@ -1,11 +1,14 @@
 package com.example.mapper;
 
+import com.example.entity.VO.CourseCate;
 import com.example.entity.VO.CourseVO;
 import com.example.entity.VO.MyCourseVO;
 import com.example.entity.domain.Course;
+import com.example.entity.domain.With;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -57,8 +60,8 @@ public interface CourseMapper {
      */
     @Options(useGeneratedKeys = true, keyColumn = "id")
     @Insert("insert into db_course(courseId, teacherId, status, parentId, createUser, createTime, modifyUser, modifyTime, isDelete, maxNum, num) " +
-            "values (courseId, teacherId, status, parentId, createUser, createTime, modifyUser, modifyTime, isDelete, maxNum, num)")
-    void addCourse(Course course);
+            "values (#{courseId}, #{teacherId}, #{status}, #{parentId}, #{createUser}, #{createTime}, #{modifyUser}, #{modifyTime}, #{isDelete}, #{maxNum}, #{num})")
+    Integer addCourse(Course course);
 
     /**
      * 根据Id查找课程
@@ -121,9 +124,42 @@ public interface CourseMapper {
      * @param courseId 课程号
      * @return 课程附属信息
      */
-    @Select("select * from anotherWithTeacher where courseId=#{courseId} order by status")
+    @Select("select * from anotherWithTeacher where parentId=#{courseId} order by status")
     List<CourseVO> getWithByCourseId(String courseId);
 
+    /**
+     * 根据课程号和课程类别获取某种课程信息
+     * @param courseId 课程号
+     * @param status 类别
+     * @return
+     */
+    @Results({
+            @Result(column = "couId", property = "value"),
+            @Result(column = "courseName", property = "label"),
+    })
+    @Select("select couId, courseName from anotherWithTeacher where parentId=#{courseId} and status = #{status}")
+    List<CourseCate> getWithByCourseIdAndStatus(@Param("courseId") String courseId, @Param("status") int status);
+
+    /**
+     * 添加作业
+     * @param courseName 作业名称
+     * @param percent 成绩占比
+     * @return
+     */
+    @Options(useGeneratedKeys = true, keyColumn = "workId", keyProperty = "id")
+    @Insert("INSERT INTO db_work_info(workName, percent, createUser, createTime, modifyUser, modifyTime, isDelete) " +
+            "values (#{courseName}, #{percent}, #{createUser}, #{createTime}, #{modifyUser}, #{modifyTime}, #{isDelete})")
+    Integer addWork(With with);
+
+    @Options(useGeneratedKeys = true, keyColumn = "testId", keyProperty = "id")
+    @Insert("INSERT INTO db_test_info(testName, percent, createUser, createTime, modifyUser, modifyTime, isDelete) " +
+            "values (#{courseName}, #{percent}, #{createUser}, #{createTime}, #{modifyUser}, #{modifyTime}, #{isDelete})")
+    Integer addTest(With with);
+
+    @Options(useGeneratedKeys = true, keyColumn = "examId", keyProperty = "id")
+    @Insert("INSERT INTO db_exam_info(examName, percent, createUser, createTime, modifyUser, modifyTime, isDelete) " +
+            "values (#{courseName}, #{percent}, #{createUser}, #{createTime}, #{modifyUser}, #{modifyTime}, #{isDelete})")
+    Integer addExam(With with);
 }
 
 
